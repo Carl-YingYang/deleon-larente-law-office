@@ -2,12 +2,36 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, User } from 'lucide-react';
 import { FIRM_KNOWLEDGE_BASE } from '../utils/firmData';
-import logo from '../assets/logo.png'; // Ginamit natin ang logo mo rito
+import logo from '../assets/logo.png';
 
 interface Message {
     role: 'user' | 'assistant';
     content: string;
 }
+
+// ── HELPER: Auto-Convert URLs to Clickable Links ──
+const formatMessage = (text: string) => {
+    // Hinahanap nito ang kahit anong nagsisimula sa http:// o https://
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    return text.split(urlRegex).map((part, index) => {
+        if (part.match(urlRegex)) {
+            return (
+                <a
+                    key={index}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    // Break-all para hindi lumagpas sa screen ang mahabang link
+                    className="text-blue-400 underline hover:text-blue-300 break-all transition-colors"
+                >
+                    {part}
+                </a>
+            );
+        }
+        return <span key={index}>{part}</span>;
+    });
+};
 
 export default function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
@@ -33,19 +57,14 @@ export default function Chatbot() {
         setIsLoading(true);
 
         try {
-            // Tanggalin ang greeting (index 0 na assistant message)
-            // para magsimula lagi sa 'user' ang conversation history
             const historyForApi = updatedMessages
-                .slice(1) // skip the greeting
+                .slice(1)
                 .map(msg => ({ role: msg.role, content: msg.content }));
 
-            // Ensure the last message is always from the user (safety check)
-            // at walang consecutive same-role messages
             const cleanHistory: { role: string; content: string }[] = [];
             for (const msg of historyForApi) {
                 const last = cleanHistory[cleanHistory.length - 1];
                 if (last && last.role === msg.role) {
-                    // Merge consecutive same-role messages
                     last.content += '\n' + msg.content;
                 } else {
                     cleanHistory.push({ ...msg });
@@ -94,10 +113,10 @@ export default function Chatbot() {
 
     return (
         <>
-            {/* Floating Button - Gumamit na tayo ng Logo imbes na MessageSquare icon */}
+            {/* Floating Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className={`fixed bottom-6 right-6 p-3.5 bg-[#c9a84c] rounded-full shadow-lg hover:scale-105 transition-transform z-[100] ${isOpen ? 'hidden' : 'block'}`}
+                className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 p-3.5 bg-[#c9a84c] rounded-full shadow-lg hover:scale-105 transition-transform z-[100] ${isOpen ? 'hidden' : 'block'}`}
             >
                 <img
                     src={logo}
@@ -112,13 +131,13 @@ export default function Chatbot() {
                         initial={{ opacity: 0, y: 50, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                        className="fixed bottom-6 right-6 w-[350px] sm:w-[400px] h-[500px] bg-[#020617] border border-slate-800 rounded-[3px] shadow-2xl flex flex-col z-[100] overflow-hidden font-sans"
+                        // ── MOBILE FIX: Ginamit ang inset-x-3 para safe margin sa gilid, at h-[85dvh] para hindi matakpan ang screen ──
+                        className="fixed inset-x-3 bottom-3 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] h-[85dvh] sm:h-[500px] max-h-[800px] bg-[#020617] border border-slate-800 rounded-xl sm:rounded-[3px] shadow-2xl flex flex-col z-[9999] overflow-hidden font-sans"
                     >
                         {/* Header */}
-                        <div className="bg-slate-900 px-5 py-4 border-b border-slate-800 flex justify-between items-center">
+                        <div className="bg-slate-900 px-4 py-3 sm:px-5 sm:py-4 border-b border-slate-800 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#c9a84c]/20 flex items-center justify-center p-1.5">
-                                    {/* Logo na ginawang kulay puti para lumitaw sa dark mode */}
+                                <div className="w-8 h-8 rounded-full bg-[#c9a84c]/20 flex items-center justify-center p-1.5 shrink-0">
                                     <img src={logo} alt="AI" className="w-full h-full object-contain brightness-0 invert opacity-90" />
                                 </div>
                                 <div>
@@ -131,27 +150,27 @@ export default function Chatbot() {
                             </div>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="text-slate-400 hover:text-white transition-colors"
+                                className="text-slate-400 hover:text-white transition-colors shrink-0 p-2 -mr-2"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     {msg.role === 'assistant' && (
                                         <div className="w-6 h-6 rounded-full bg-slate-800 flex-shrink-0 flex items-center justify-center mt-1 p-1">
-                                            {/* Logo ulit bilang avatar ng bot */}
                                             <img src={logo} alt="AI" className="w-full h-full object-contain brightness-0 invert opacity-70" />
                                         </div>
                                     )}
-                                    <div className={`p-3 rounded-[3px] max-w-[80%] text-[13px] leading-relaxed ${msg.role === 'user'
-                                        ? 'bg-[#c9a84c] text-slate-950 rounded-tr-none font-medium'
-                                        : 'bg-slate-900 border border-slate-800/60 text-slate-300 rounded-tl-none font-light'
+                                    {/* ── TEXT FIX: Nilagyan ng whitespace-pre-wrap at break-words para malinis ang paragraph at puputol ang mahabang links ── */}
+                                    <div className={`p-3 rounded-[6px] sm:rounded-[3px] max-w-[85%] sm:max-w-[80%] text-[13px] leading-relaxed break-words whitespace-pre-wrap ${msg.role === 'user'
+                                            ? 'bg-[#c9a84c] text-slate-950 rounded-tr-none font-medium'
+                                            : 'bg-slate-900 border border-slate-800/60 text-slate-300 rounded-tl-none font-light'
                                         }`}>
-                                        {msg.content}
+                                        {formatMessage(msg.content)}
                                     </div>
                                     {msg.role === 'user' && (
                                         <div className="w-6 h-6 rounded-full bg-[#c9a84c]/20 flex-shrink-0 flex items-center justify-center mt-1">
@@ -178,7 +197,7 @@ export default function Chatbot() {
                         </div>
 
                         {/* Input & AI Disclaimer Notice */}
-                        <div className="p-4 bg-slate-900 border-t border-slate-800">
+                        <div className="p-3 sm:p-4 bg-slate-900 border-t border-slate-800 shrink-0 pb-safe">
                             <div className="relative">
                                 <input
                                     type="text"
@@ -186,7 +205,7 @@ export default function Chatbot() {
                                     onChange={e => setInput(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && handleSend()}
                                     placeholder="Ask about our services..."
-                                    className="w-full bg-[#020617] border border-slate-800 rounded-[3px] py-3 pl-4 pr-12 text-[13px] text-slate-200 focus:outline-none focus:border-[#c9a84c]/50 transition-colors placeholder:text-slate-600"
+                                    className="w-full bg-[#020617] border border-slate-800 rounded-[6px] sm:rounded-[3px] py-3 pl-4 pr-12 text-[13px] text-slate-200 focus:outline-none focus:border-[#c9a84c]/50 transition-colors placeholder:text-slate-600"
                                 />
                                 <button
                                     onClick={handleSend}
@@ -197,7 +216,6 @@ export default function Chatbot() {
                                 </button>
                             </div>
 
-                            {/* ── AI DISCLAIMER NOTICE ── */}
                             <p className="text-[9px] sm:text-[10px] text-slate-500 text-center mt-3 font-light px-2 leading-relaxed">
                                 <span className="font-medium text-slate-400">Notice:</span> I am an AI assistant and may occasionally make mistakes. Please do not share highly sensitive or confidential information in this chat.
                             </p>
