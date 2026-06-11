@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
+// Ina-assume na ang file mo na ito ay nasa src/components/ folder. 
+// Kung nasa src/ folder ito mismo, tanggalin ang isang tuldok (gawing './assets/...')
+import heroVideo from '../assets/vid-hero/hero-vid.mp4';
+import heroPoster from '../assets/hero-1.png';
+
 const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -32,12 +37,12 @@ export default function Hero() {
             <div className="absolute inset-0 z-0">
                 <video
                     onCanPlayThrough={() => setVideoLoaded(true)}
-                    src="/src/assets/vid-hero/hero-vid.mp4"
+                    src={heroVideo}
                     autoPlay
                     muted
                     loop
                     playsInline
-                    poster="/src/assets/hero-1.png"
+                    poster={heroPoster}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
                         }`}
                     aria-hidden="true"
